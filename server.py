@@ -20,8 +20,8 @@ from collections import defaultdict
 import websockets
 from websocket import create_connection
 import requests
-from PIL import Image
-import numpy as np
+import hashlib
+import secrets
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -42,7 +42,9 @@ app.add_middleware(
 # Security
 security = HTTPBearer()
 JWT_SECRET = os.environ.get("JWT_SECRET_KEY", "your-super-secret-jwt-key")
-JWT_ALGORITHM = "HS256"
+
+# Simple token storage (in production, use Redis or database)
+active_tokens = {}
 
 # MongoDB connection
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017/security_app")
@@ -216,19 +218,26 @@ def verify_pin(pin: str, hashed: str) -> bool:
     return bcrypt.checkpw(pin.encode('utf-8'), hashed.encode('utf-8'))
 
 def create_jwt_token(data: dict) -> str:
-    to_encode = data.copy()
+    """Create a simple token without JWT library"""
+    token = secrets.token_urlsafe(32)
     expire = datetime.utcnow() + timedelta(hours=24)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    active_tokens[token] = {
+        **data,
+        "exp": expire.timestamp()
+    }
+    return token
 
 def verify_jwt_token(token: str) -> dict:
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.JWTError:
+    """Verify token without JWT library"""
+    if token not in active_tokens:
         raise HTTPException(status_code=401, detail="Invalid token")
+    
+    token_data = active_tokens[token]
+    if datetime.utcnow().timestamp() > token_data["exp"]:
+        del active_tokens[token]
+        raise HTTPException(status_code=401, detail="Token expired")
+    
+    return token_data
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     return verify_jwt_token(credentials.credentials)
