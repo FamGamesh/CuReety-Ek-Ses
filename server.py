@@ -9,8 +9,8 @@ import asyncio
 import json
 import os
 import uuid
-import jwt
-import bcrypt
+
+
 from motor.motor_asyncio import AsyncIOMotorClient
 import aiofiles
 from io import BytesIO
@@ -18,7 +18,7 @@ import base64
 import time
 from collections import defaultdict
 import websockets
-from websocket import create_connection
+
 import requests
 import hashlib
 import secrets
@@ -212,10 +212,10 @@ class NotificationData(BaseModel):
 
 # Security functions
 def hash_pin(pin: str) -> str:
-    return bcrypt.hashpw(pin.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return hashlib.sha256(pin.encode('utf-8')).hexdigest()
 
 def verify_pin(pin: str, hashed: str) -> bool:
-    return bcrypt.checkpw(pin.encode('utf-8'), hashed.encode('utf-8'))
+    return hashlib.sha256(pin.encode('utf-8')).hexdigest() == hashed
 
 def create_jwt_token(data: dict) -> str:
     """Create a simple token without JWT library"""
