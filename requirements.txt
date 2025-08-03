@@ -1,8 +1,8 @@
-fastapi==0.95.2
-uvicorn[standard]==0.20.0
+fastapi>=0.82,<0.100
+pydantic>=1.10,<2.0
+uvicorn[standard]>=0.18,<0.25
 motor==3.1.1
 pymongo==4.3.3
-pydantic==1.10.14
 python-multipart==0.0.6
 aiofiles==23.1.0
 requests==2.31.0
