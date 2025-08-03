@@ -17,7 +17,7 @@ from io import BytesIO
 import base64
 import time
 from collections import defaultdict
-import websockets
+
 
 import requests
 import hashlib
